@@ -1,0 +1,7 @@
+C:\Users\taduser\Desktop\narcissus\narcissus\bin\Debug\narcissus.exe.config
+C:\Users\taduser\Desktop\narcissus\narcissus\bin\Debug\narcissus.exe
+C:\Users\taduser\Desktop\narcissus\narcissus\bin\Debug\narcissus.pdb
+C:\Users\taduser\Desktop\narcissus\narcissus\obj\Debug\narcissus.csprojAssemblyReference.cache
+C:\Users\taduser\Desktop\narcissus\narcissus\obj\Debug\narcissus.csproj.CoreCompileInputs.cache
+C:\Users\taduser\Desktop\narcissus\narcissus\obj\Debug\narcissus.exe
+C:\Users\taduser\Desktop\narcissus\narcissus\obj\Debug\narcissus.pdb
