@@ -36,6 +36,14 @@ namespace narcissus
             }
         }
 
+        public async Task<string> PostAsync(string url, HttpContent content)
+        {
+            using (var response = await narcissusHTTPClient.PostAsync(url, content))
+            {
+                return await response.Content.ReadAsStringAsync();
+            }
+        }
+
         public string Build_AuthHeader(string nonce, string timestamp, string method, string url, Dictionary<string, string> requestParams=null)
         {
             Dictionary<string, string> authorizationParams = new Dictionary<string, string>();
@@ -132,10 +140,46 @@ namespace narcissus
             return twitterResponse;
         }
 
+        public string Send_DM()
+        {
+            string method = "POST";
+            string dmSendUrl = "1.1/direct_messages/events/new.json";
+            Dictionary<string, string> sendDMParams = new Dictionary<string, string>();
+            sendDMParams.Add("type", "message_create");
+            sendDMParams.Add("message_create.target.recipient_id", "1046167154578599936");
+            string message = "Boy I'm really about to GET your pickle chin ass";
+            sendDMParams.Add("message_create.message_data", message);
+
+            string nonce = Convert.ToBase64String(Encoding.UTF8.GetBytes(Guid.NewGuid().ToString("N")));
+            UInt32 timestamp = (UInt32)DateTime.UtcNow.Subtract(new DateTime(1970, 1, 1)).TotalSeconds;
+            string formTimestamp = timestamp.ToString();
+            string authenticationHeader = Build_AuthHeader(nonce, formTimestamp, method, narcissusHTTPClient.BaseAddress.ToString() + dmSendUrl);
+
+            string postData = "{\"event\": " +
+                "{" +
+                "\"type\": \"message_create\", " +
+                "\"message_create\": {" +
+                    "\"target\": {\"recipient_id\": " + sendDMParams["message_create.target.recipient_id"] + "}," +
+                    "\"message_data\": {\"text\": " + sendDMParams["message_create.message_data"] + "}" +
+                    "}" +
+                "}" +
+                "}";
+    
+            HttpContent messageContent = new StringContent(postData);
+
+            narcissusHTTPClient.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("OAuth", authenticationHeader);
+            narcissusHTTPClient.DefaultRequestHeaders.Accept.Add(
+                new System.Net.Http.Headers.MediaTypeWithQualityHeaderValue("application/json"));
+
+            string twitterResponse = narcissusMain.PostAsync(dmSendUrl, messageContent).Result;
+
+            return twitterResponse;
+        }
+
         static void Main(string[] args)
         { 
             narcissusHTTPClient.BaseAddress = new Uri("https://api.twitter.com");
-            string twitterResponse = narcissusMain.Receive_DM();
+            string twitterResponse = narcissusMain.Send_DM();
             Console.WriteLine(twitterResponse);
         }
     }
