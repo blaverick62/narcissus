@@ -36,59 +36,94 @@ namespace narcissus
             }
         }
 
-        public string Build_AuthHeader(string nonce, string timestamp, string method, string url)
+        public string Build_AuthHeader(string nonce, string timestamp, string method, string url, Dictionary<string, string> requestParams=null)
         {
+            Dictionary<string, string> authorizationParams = new Dictionary<string, string>();
+            authorizationParams.Add("oauth_nonce", nonce);
+            authorizationParams.Add("oauth_timestamp", timestamp);
+            authorizationParams.Add("oauth_consumer_key", oauthKey);
+            authorizationParams.Add("oauth_signature_method", "HMAC-SHA1");
+            authorizationParams.Add("oauth_token", oauthToken);
+            authorizationParams.Add("oauth_version", "1.0");
+            if(requestParams != null)
+            {
+                foreach(KeyValuePair<string,string> paramPair in requestParams)
+                {
+                    authorizationParams.Add(paramPair.Key, paramPair.Value);
+                }
+            }
 
-            string sigMethURL = String.Format(
-                "{0}&{1}&",
+            string signatureBaseString = "";
+            List<string> paramKeys = authorizationParams.Keys.ToList();
+            paramKeys.Sort();
+            foreach(string requestParam in paramKeys)
+            {
+                if(requestParam == paramKeys.First())
+                {
+                    signatureBaseString = signatureBaseString + 
+                        Uri.EscapeDataString(requestParam) +
+                        "=" +
+                        Uri.EscapeDataString(authorizationParams[requestParam]);
+                } else
+                {
+                    signatureBaseString = signatureBaseString +
+                        "&" +
+                        Uri.EscapeDataString(requestParam) +
+                        "=" +
+                        Uri.EscapeDataString(authorizationParams[requestParam]);
+                }  
+            }
+
+            string signatureString = String.Format("{0}&{1}&{2}",
                 method,
-                Uri.EscapeDataString(url));
+                Uri.EscapeDataString(url),
+                Uri.EscapeDataString(signatureBaseString));
 
-            string sigString = String.Format(
-                "oauth_consumer_key={0}&oauth_nonce={1}&oauth_signature_method={2}&oauth_timestamp={3}&oauth_token={4}&oauth_version=1.0",
-                Uri.EscapeDataString(oauthKey), 
-                Uri.EscapeDataString(nonce), 
-                Uri.EscapeDataString("HMAC-SHA1"),
-                Uri.EscapeDataString(timestamp.ToString()), 
-                Uri.EscapeDataString(oauthToken));
-
-            string baseString = method + "&" + Uri.EscapeDataString(url) + "&" + Uri.EscapeDataString(sigString);
-
-            byte[] signingKey = Encoding.UTF8.GetBytes(Uri.EscapeDataString(oauthKeySecret) + "&" + Uri.EscapeDataString(oauthTokenSecret));
+            byte[] signingKey = Encoding.UTF8.GetBytes(Uri.EscapeDataString(oauthKeySecret) + 
+                "&" + 
+                Uri.EscapeDataString(oauthTokenSecret));
 
             HMACSHA1 oauthSigner = new HMACSHA1(signingKey);
-            byte[] oauthHashBytes = oauthSigner.ComputeHash(Encoding.UTF8.GetBytes(baseString));
+            byte[] oauthHashBytes = oauthSigner.ComputeHash(Encoding.UTF8.GetBytes(signatureString));
             string oauthSignature = Convert.ToBase64String(oauthHashBytes);
 
-            string authorizationHeader = String.Format(
-                "oauth_consumer_key=\"{0}\", " +
-                "oauth_nonce=\"{1}\", " +
-                "oauth_signature=\"{2}\", " +
-                "oauth_signature_method=\"HMAC-SHA1\", " +
-                "oauth_timestamp=\"{3}\", " +
-                "oauth_token=\"{4}\", " +
-                "oauth_version=\"1.0\"",
-                Uri.EscapeDataString(oauthKey),
-                Uri.EscapeDataString(nonce),
-                Uri.EscapeDataString(oauthSignature),
-                Uri.EscapeDataString(timestamp),
-                Uri.EscapeDataString(oauthToken)
-                );
+            authorizationParams.Add("oauth_signature", oauthSignature);
 
-            return authorizationHeader;
+            string headerString = "";
+            List<string> headerKeys = authorizationParams.Keys.ToList();
+            headerKeys.Sort();
+            foreach(string headerParam in headerKeys)
+            {   
+                if(headerParam == headerKeys.Last())
+                {
+                    headerString = headerString +
+                    Uri.EscapeDataString(headerParam) +
+                    "=" +
+                    "\"" +
+                    Uri.EscapeDataString(authorizationParams[headerParam]) +
+                    "\"";
+                } else
+                {
+                    headerString = headerString +
+                    Uri.EscapeDataString(headerParam) +
+                    "=" +
+                    "\"" +
+                    Uri.EscapeDataString(authorizationParams[headerParam]) +
+                    "\", ";
+                }
+            }
+
+            return headerString;
         }
 
         public string Receive_DM()
         {
             string method = "GET";
             string dmReceiveUrl = "1.1/direct_messages/events/list.json";
-            string contentType = "application/json";
-            string host = "api.twitter.com";
 
             string nonce = Convert.ToBase64String(Encoding.UTF8.GetBytes(Guid.NewGuid().ToString("N")));
             UInt32 timestamp = (UInt32)DateTime.UtcNow.Subtract(new DateTime(1970, 1, 1)).TotalSeconds;
             string formTimestamp = timestamp.ToString();
-
             string authenticationHeader = Build_AuthHeader(nonce, formTimestamp, method, narcissusHTTPClient.BaseAddress.ToString() + dmReceiveUrl);
           
             narcissusHTTPClient.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("OAuth", authenticationHeader);
