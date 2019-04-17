@@ -159,8 +159,8 @@ namespace narcissus
                 "{" +
                 "\"type\": \"message_create\", " +
                 "\"message_create\": {" +
-                    "\"target\": {\"recipient_id\": " + sendDMParams["message_create.target.recipient_id"] + "}," +
-                    "\"message_data\": {\"text\": " + sendDMParams["message_create.message_data"] + "}" +
+                    "\"target\": {\"recipient_id\": " + "\"" + sendDMParams["message_create.target.recipient_id"] +"\"" + "}," +
+                    "\"message_data\": {\"text\": " + "\"" + sendDMParams["message_create.message_data"] +"\"" + "}" +
                     "}" +
                 "}" +
                 "}";
@@ -168,8 +168,7 @@ namespace narcissus
             HttpContent messageContent = new StringContent(postData);
 
             narcissusHTTPClient.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("OAuth", authenticationHeader);
-            narcissusHTTPClient.DefaultRequestHeaders.Accept.Add(
-                new System.Net.Http.Headers.MediaTypeWithQualityHeaderValue("application/json"));
+            narcissusHTTPClient.DefaultRequestHeaders.Accept.Add(new System.Net.Http.Headers.MediaTypeWithQualityHeaderValue("application/json"));
 
             string twitterResponse = narcissusMain.PostAsync(dmSendUrl, messageContent).Result;
 
