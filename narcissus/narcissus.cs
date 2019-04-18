@@ -8,15 +8,68 @@
 
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Net.Http;
 using System.Linq;
 using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Tasks;
+using System.Web.Script.Serialization;
 
 namespace narcissus
 {
+    public class Target
+    {
+        public string recipient_id { get; set; }
+    }
+
+    public class Entities
+    {
+        public List<object> hashtags { get; set; }
+        public List<object> symbols { get; set; }
+        public List<object> user_mentions { get; set; }
+        public List<object> urls { get; set; }
+    }
+
+    public class MessageData
+    {
+        public string text { get; set; }
+        public Entities entities { get; set; }
+    }
+
+    public class MessageCreate
+    {
+        public Target target { get; set; }
+        public string sender_id { get; set; }
+        public string source_app_id { get; set; }
+        public MessageData message_data { get; set; }
+    }
+
+    public class Event
+    {
+        public string type { get; set; }
+        public string id { get; set; }
+        public string created_timestamp { get; set; }
+        public MessageCreate message_create { get; set; }
+    }
+
+    public class __invalid_type__16162985
+    {
+        public string id { get; set; }
+        public string name { get; set; }
+        public string url { get; set; }
+    }
+
+    public class Apps
+    {
+        public __invalid_type__16162985 __invalid_name__16162985 { get; set; }
+    }
+
+    public class TwitterResponse
+    {
+        public List<Event> events { get; set; }
+        public Apps apps { get; set; }
+    }
+
     class Narcissus
     {
         static Narcissus narcissusMain = new Narcissus();
@@ -140,13 +193,13 @@ namespace narcissus
             return twitterResponse;
         }
 
-        public string Send_DM()
+        public string Send_DM(string recipientId)
         {
             string method = "POST";
             string dmSendUrl = "1.1/direct_messages/events/new.json";
             Dictionary<string, string> sendDMParams = new Dictionary<string, string>();
             sendDMParams.Add("type", "message_create");
-            sendDMParams.Add("message_create.target.recipient_id", "1046167154578599936");
+            sendDMParams.Add("message_create.target.recipient_id", recipientId);
             string message = "Boy I'm really about to GET your pickle chin ass";
             sendDMParams.Add("message_create.message_data", message);
 
@@ -176,9 +229,11 @@ namespace narcissus
         }
 
         static void Main(string[] args)
-        { 
+        {
+            JavaScriptSerializer messageParser = new JavaScriptSerializer();
             narcissusHTTPClient.BaseAddress = new Uri("https://api.twitter.com");
-            string twitterResponse = narcissusMain.Send_DM();
+            string twitterResponse = narcissusMain.Receive_DM();
+            TwitterResponse responseData =  messageParser.Deserialize<TwitterResponse>(twitterResponse);
             Console.WriteLine(twitterResponse);
         }
     }
