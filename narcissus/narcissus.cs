@@ -12,6 +12,7 @@ using System.Net.Http;
 using System.Linq;
 using System.Security.Cryptography;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Web.Script.Serialization;
 
@@ -228,13 +229,50 @@ namespace narcissus
             return twitterResponse;
         }
 
+        public static void MessageListener()
+        {
+            string twitterResponse;
+            JavaScriptSerializer messageParser = new JavaScriptSerializer();
+            TwitterResponse responseData;
+            DateTime epoch = new DateTime(1970, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc);
+            DateTime latestTime = new DateTime(1970, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc);
+            while (true)
+            {
+                try
+                {
+                    twitterResponse = narcissusMain.Receive_DM();
+                    responseData = messageParser.Deserialize<TwitterResponse>(twitterResponse);
+                    foreach (Event dmEvent in responseData.events)
+                    {
+                        if (epoch.AddMilliseconds(Convert.ToDouble(dmEvent.created_timestamp)) > latestTime && dmEvent.message_create.sender_id != "35088627")
+                        {
+                            latestTime = epoch.AddMilliseconds(Convert.ToDouble(dmEvent.created_timestamp));
+                            Console.WriteLine(latestTime.ToString());
+                            narcissusMain.Send_DM(dmEvent.message_create.sender_id);
+                        }
+                    }
+                    Thread.Sleep(60000);
+                }
+                catch (ThreadAbortException)
+                {
+                    Console.WriteLine("Narcissus listener exited safely");
+                    break;
+                }
+            } 
+        }
+
         static void Main(string[] args)
         {
-            JavaScriptSerializer messageParser = new JavaScriptSerializer();
             narcissusHTTPClient.BaseAddress = new Uri("https://api.twitter.com");
-            string twitterResponse = narcissusMain.Receive_DM();
-            TwitterResponse responseData =  messageParser.Deserialize<TwitterResponse>(twitterResponse);
-            Console.WriteLine(twitterResponse);
+            Thread listenerThread = new Thread(new ThreadStart(MessageListener));
+            listenerThread.Start();
+            Console.WriteLine("Enter 'q' to exit...");
+            string exitChar = "";
+            while (exitChar != "q")
+            {
+                exitChar = Console.ReadLine();
+            }
+            listenerThread.Abort();
         }
     }
 }
