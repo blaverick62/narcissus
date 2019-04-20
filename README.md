@@ -4,6 +4,11 @@
 
 ## Requirements:
  - Narcissus requires one Twitter developer account. Any messages sent to this account while Narcissus is running will be interpreted as commands.
+ - Once you have created a developer account, create a new user environment variable and set these values, separated by semicolons:
+   - Consumer Key
+   - Consumer Key Secret
+   - Access Token
+   - Access Token Secret
  - Target must be a Windows host with a compatible version of .NET
  
 ## Delivery Methods:
