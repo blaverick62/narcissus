@@ -9,6 +9,8 @@
    - Consumer Key Secret
    - Access Token
    - Access Token Secret
+ - For delivery to a remote system, hardcode these values as strings to the appropriate values. *AT YOUR OWN RISK*
+   - This will expose your API keys and secrets, but is the only way to interact with the API with no interaction to other delivery domains.
  - Target must be a Windows host with a compatible version of .NET
  
 ## Delivery Methods:
@@ -18,3 +20,10 @@
 ## Commands:
  - Any simple PowerShell command can be executed in Narcissus through it's custom pipeline. Results are limited to Twitter message limits.
  - Kill: Stops Narcissus agent on target
+ 
+## Upcoming Features:
+ - Screenshots
+ - Keylogger
+ - System info collection
+ - Large script delivery
+ - Troll/Proof of compromise
