@@ -11,7 +11,7 @@
    - Access Token Secret
  - For delivery to a remote system, hardcode these values as strings to the appropriate values. *AT YOUR OWN RISK*
    - This will expose your API keys and secrets, but is the only way to interact with the API with no interaction to other delivery domains.
- - Target must be a Windows host with a compatible version of .NET
+ - Target must be a Windows host with .NET Framework v4.0.30319
  
 ## Delivery Methods:
  - Compile Narcissus as a standalone executable and execute on target
