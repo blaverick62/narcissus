@@ -23,7 +23,8 @@
  - Get-Screenshot: Takes screenshot of active desktop, writes it to user's temp, sends it back, then deletes it.
  
 ## Upcoming Features:
- - Keylogger
+ - Command queueing
  - System info collection
  - Large script delivery
- - Troll/Proof of compromise
+ - Microphone access
+ - Webcam access
