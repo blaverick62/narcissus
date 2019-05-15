@@ -23,9 +23,12 @@
  - Any simple PowerShell command can be executed in Narcissus through it's custom pipeline. Results are limited to Twitter message limits.
  - Kill: Stops Narcissus agent on target
  - Get-Screenshot: Takes screenshot of active desktop, writes it to user's temp, sends it back, then deletes it.
+ - Start-Keylogger: Sets a low level keyboard hook and collects keys across all applications
+ - Kill-Keylogger: Uninstalls the keyboard hook and sends collected keystrokes back
  
 ## Upcoming Features:
  - Command queueing
+ - Large output
  - System info collection
  - Large script delivery
  - Microphone access
