@@ -1,6 +1,4 @@
 ﻿/*
- * AUTHOR: 2d Lt Braden Laverick
- * ORGANIZATION: 92 COS/DOA
  * PROJECT: Narcissus
  * DESCRIPTION: This project is a proof of concept for a twitter-based remote access trojan. The tool is controlled through
  * direct messages in twitter. The bot requires access to one account to receive and send direct messages.
