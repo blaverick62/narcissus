@@ -15,7 +15,9 @@
  
 ## Delivery Methods:
  - Compile Narcissus as a standalone executable and execute on target
- - Deliver as string to host and execute in powershell using Add-Type
+ - Deliver as PowerShell payload
+   1. Run code in included .ps1 file
+   2. Run with [narcissus.Narcissus]::Main()
  
 ## Commands:
  - Any simple PowerShell command can be executed in Narcissus through it's custom pipeline. Results are limited to Twitter message limits.
